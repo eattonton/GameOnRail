@@ -349,17 +349,20 @@ export default class Nonograms extends Phaser.Scene {
         this.m_TimerCard.setText("00:00");
         this.m_TimerSeconds = 0;
         for (let i = 0; i < this.m_NumRow; i++) {
-            this.m_ObjContainer.add(this.DrawRow(i));
             for (let j = 0; j < this.m_NumCol; j++) {
                 let index = i * this.m_NumCol + j;
                 this.m_TbCells[index].Reset();
                 this.m_TbCells[index].SpriteCell.setFrame(this.m_TbCells[index].ShowIndex);
                 this.m_TbCells[index].SpriteCell.setTint(0xffffff);
-
-                if(i == 0){
-                    this.m_ObjContainer.add(this.DrawColumn(j));
-                }
             }
+        }
+
+        for(let i=0;i<this.m_NumRow;i++){
+            this.m_ObjContainer.add(this.DrawRow(i));
+        }
+
+        for (let j = 0; j < this.m_NumCol; j++) {
+            this.m_ObjContainer.add(this.DrawColumn(j));
         }
 
     }
