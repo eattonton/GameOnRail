@@ -1,0 +1,19 @@
+{
+  "name": "attackonball",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel serve src/index.html --no-cache",
+    "build": "parcel build src/index.html --public-url ./ --no-source-maps --no-cache --detailed-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+}
