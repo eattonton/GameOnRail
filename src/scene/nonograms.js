@@ -20,7 +20,7 @@ class NNCell {
     SpriteCell = null;
 
     constructor(idx, sIdx, rIdx) {
-        this.index = idx;
+        this.Index = idx;
         this.ShowIndex = sIdx;
         this.RealIndex = rIdx;
     }
@@ -35,7 +35,7 @@ class NNCell {
     Reset(){
         this.ShowIndex = 0;
         this.RealIndex = Phaser.Math.Between(1,2);
-        this.isRight = false;
+        this.IsRight = false;
     }
 }
 
@@ -73,16 +73,19 @@ export default class Nonograms extends Phaser.Scene {
     /** @type {number} */
     m_TimerSeconds = 0;
 
+    /** @type {number} */
+    m_PointerRow = -1;
+    /** @type {number} */
+    m_PointerCol = -1;
+
+    /** @type {number} 选择模式 */
+    m_SelectedMode = 1;
+
     create() {
         let CenterX = this.scale.width / 2;
         let CenterY = this.scale.height / 2;
         //1.生成表格
-        for (let i = 0; i < this.m_NumRow; i++) {
-            for (let j = 0; j < this.m_NumCol; j++) {
-                let index = i * this.m_NumCol + j;
-                this.m_TbCells.push(new NNCell(index, 0, Phaser.Math.Between(1, 2)));
-            }
-        }
+        this.CreateTableData();
         //2.绘制
         this.m_ObjContainer = this.add.container(750, CenterY - 500);
         let that = this;
@@ -96,11 +99,16 @@ export default class Nonograms extends Phaser.Scene {
                 c1.NNCell = this.m_TbCells[index];
                 this.m_TbCells[index].SpriteCell = c1;
                 c1.on('pointerdown', (pt, x, y, evt)=> {
-                    this.OnBtnDown(c1);
                     this.m_IsTouchDown = true;
+                    [this.m_PointerRow, this.m_PointerCol] = this.GetRowColByIndex(c1.NNIndex);
+                    this.OnBtnDown(c1);
                 });
                 c1.on('pointerover', (pt, x, y, evt)=> {  
-                    if(this.m_IsTouchDown == true) this.OnBtnDown(c1);
+                    let [iR, iC] = this.GetRowColByIndex(c1.NNIndex);
+                    if(this.m_IsTouchDown == true && (
+                        this.m_PointerRow == iR || this.m_PointerCol == iC)){
+                        this.OnBtnDown(c1);
+                    }
                 });  
                 this.m_ObjContainer.add(c1);
                 if (i == 0) {
@@ -119,7 +127,6 @@ export default class Nonograms extends Phaser.Scene {
         this.m_ObjContainer.add(lineV);
         //3.添加事件
         this.input.on('pointerdown', (pointer) => {
-            
         });
 
         this.input.on('pointerup', (pointer) => {
@@ -132,20 +139,27 @@ export default class Nonograms extends Phaser.Scene {
     }
 
     update(){
-
     }
 
-    OnBtnDown(cell) {
-        cell.setFrame(cell.NNCell.RealIndex);
-        if (cell.NNCell.RealIndex == 1) {
-            cell.NNCell.IsRight = true;
+    OnBtnDown(c1) {
+        let cell = this.m_TbCells[c1.NNIndex];
+        if(cell.ShowIndex > 0){return;} 
+        cell.SpriteCell.setFrame(cell.RealIndex);
+        if (cell.RealIndex == 1) {
+            cell.IsRight = true;
+        }
+        else if (cell.RealIndex == 2) {
+        }
+        
+        if(this.m_SelectedMode == cell.RealIndex){
             //检查是否正确
-            this.CheckByCell(cell.NNIndex);
+            this.CheckByCell(cell.Index);
         }
-        else if (cell.NNCell.RealIndex == 2) {
+        if(this.m_SelectedMode != cell.RealIndex){
             //点击错误
-            cell.setTint(0xff0000);
-        }
+            cell.SpriteCell.setTint(0xff0000);
+        } 
+        cell.ShowIndex = cell.RealIndex;
     }
 
     RemoveRightColor(index){
@@ -255,10 +269,14 @@ export default class Nonograms extends Phaser.Scene {
         return arrIdx;
     }
 
-    CheckByCell(index) {
+    GetRowColByIndex(index){
         let iR = parseInt(index / this.m_NumCol);
         let iC = index % this.m_NumCol;
+        return [iR, iC];
+    }
 
+    CheckByCell(index) {
+        let [iR,iC] = this.GetRowColByIndex(index);
         this.CheckByRow(iR);
         this.CheckByCol(iC);
     }
@@ -278,6 +296,7 @@ export default class Nonograms extends Phaser.Scene {
             for (let j = 0; j < this.m_NumCol; j++) {
                 let idx = index * this.m_NumCol + j;
                 if (this.m_TbCells[idx].RealIndex == 2) {
+                    this.m_TbCells[idx].ShowIndex = this.m_TbCells[idx].RealIndex;
                     this.m_TbCells[idx].SpriteCell.setFrame(this.m_TbCells[idx].RealIndex);
                 }
             }
@@ -301,6 +320,7 @@ export default class Nonograms extends Phaser.Scene {
             for (let i = 0; i < this.m_NumRow; i++) {
                 let idx = i * this.m_NumCol + index;
                 if (this.m_TbCells[idx].RealIndex == 2) {
+                    this.m_TbCells[idx].ShowIndex = this.m_TbCells[idx].RealIndex;
                     this.m_TbCells[idx].SpriteCell.setFrame(this.m_TbCells[idx].RealIndex);
                 }
             }
@@ -333,10 +353,28 @@ export default class Nonograms extends Phaser.Scene {
     }
 
     CreateButtons(x,y){
-        let btnReset = this.add.sprite(x-150,y+600,'imgBtns',2).setOrigin(0);
+        //重新开始
+        let btnReset = this.add.sprite(x-200,y+600,'imgBtns',2).setOrigin(0);
         btnReset.setInteractive();
         btnReset.on('pointerdown',()=>{
             this.Reset();
+        })
+        //选择X
+        let btnCross = this.add.sprite(x, y+600, 'imgBtns',0).setOrigin(0);
+        btnCross.setInteractive();
+        btnCross.on('pointerdown',()=>{
+            btnBlock.setTint(0xffffff);
+            btnCross.setTint(0x00ff00);
+            this.m_SelectedMode = 2;
+        })
+        //选择方块
+        let btnBlock = this.add.sprite(x+170, y+600, 'imgBtns',1).setOrigin(0);
+        btnBlock.setInteractive();
+        btnBlock.setTint(0x00ff00);
+        btnBlock.on('pointerdown',()=>{
+            btnCross.setTint(0xffffff);
+            btnBlock.setTint(0x00ff00);
+            this.m_SelectedMode = 1;
         })
     }
 
@@ -348,10 +386,12 @@ export default class Nonograms extends Phaser.Scene {
         })
         this.m_TimerCard.setText("00:00");
         this.m_TimerSeconds = 0;
+        //重新生成数据
+        this.CreateTableData();
+        //格式化棋盘
         for (let i = 0; i < this.m_NumRow; i++) {
             for (let j = 0; j < this.m_NumCol; j++) {
                 let index = i * this.m_NumCol + j;
-                this.m_TbCells[index].Reset();
                 this.m_TbCells[index].SpriteCell.setFrame(this.m_TbCells[index].ShowIndex);
                 this.m_TbCells[index].SpriteCell.setTint(0xffffff);
             }
@@ -364,6 +404,39 @@ export default class Nonograms extends Phaser.Scene {
         for (let j = 0; j < this.m_NumCol; j++) {
             this.m_ObjContainer.add(this.DrawColumn(j));
         }
-
     }
+
+    CreateTableData(){
+        do{
+            for (let i = 0; i < this.m_NumRow; i++) {
+                for (let j = 0; j < this.m_NumCol; j++) {
+                    let index = i * this.m_NumCol + j;
+                    if(index >= this.m_TbCells.length){
+                        this.m_TbCells.push(new NNCell(index, 0, 0));
+                    }
+                    this.m_TbCells[index].Reset();
+                }
+            }
+        }while(!this.CheckTableData())
+    }
+
+    CheckTableData(){
+        for(let i=0;i<this.m_NumRow;i++){
+            let strIdxs = this.GetBlockIndexsByCol(i);
+            if(strIdxs.length == 0 || strIdxs.length > 4){
+                return false;
+            }
+        }
+
+        for(let i=0;i<this.m_NumCol;i++){
+            let strIdxs = this.GetBlockIndexsByRow(i);
+            if(strIdxs.length == 0 || strIdxs.length > 4){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
 }
