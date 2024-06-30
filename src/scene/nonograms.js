@@ -1,8 +1,6 @@
 import Phaser from "phaser";
 import TT from "../gameconfig"
-import pngCells from "../assets/cells.png"
-import pngBtns from "../assets/btns.png"
-
+import TimerAnimation from "../js/timer";
 /**
  * 单元格对象
  */
@@ -39,19 +37,7 @@ class NNCell {
     }
 }
 
-export default class Nonograms extends Phaser.Scene {
-    constructor() {
-        super({
-            key: "Nonograms",
-            active: true
-        });
-    }
-
-    preload() {
-        document.getElementById("homeload").remove();
-        this.load.spritesheet('imgCells', pngCells, { frameWidth: 85, frameHeight: 85 });
-        this.load.spritesheet('imgBtns', pngBtns, {frameWidth:150, frameHeight:150});
-    }
+class NNTable{
     /** @type{number} */
     m_NumCol = 10;
     /** @type {number} */
@@ -59,174 +45,43 @@ export default class Nonograms extends Phaser.Scene {
     /** @type {Array<NNCell>} */
     m_TbCells = [];
 
-    /** @type{number} */
-    m_SizeCell = 85;
+    constructor(col, row){
+        this.m_NumCol = col;
+        this.m_NumRow = row;
+    }
 
-    /** @type {Phaser.GameObjects.Container} */
-    m_ObjContainer;
-
-    /** @type {boolean} */
-    m_IsTouchDown = false;
-
-    /** @type {Phaser.GameObjects.text} */
-    m_TimerCard = null;
-    /** @type {number} */
-    m_TimerSeconds = 0;
-
-    /** @type {number} */
-    m_PointerRow = -1;
-    /** @type {number} */
-    m_PointerCol = -1;
-
-    /** @type {number} 选择模式 */
-    m_SelectedMode = 1;
-
-    create() {
-        let CenterX = this.scale.width / 2;
-        let CenterY = this.scale.height / 2;
-        //1.生成表格
-        this.CreateTableData();
-        //2.绘制
-        this.m_ObjContainer = this.add.container(750, CenterY - 500);
-        let that = this;
-        for (let i = 0; i < this.m_NumRow; i++) {
-            this.m_ObjContainer.add(this.DrawRow(i));
-            for (let j = 0; j < this.m_NumCol; j++) {
-                let index = i * this.m_NumCol + j;
-                let c1 = this.add.sprite(this.m_SizeCell * i, this.m_SizeCell * j, 'imgCells', this.m_TbCells[index].ShowIndex).setOrigin(0);
-                c1.setInteractive();
-                c1.NNIndex = index;
-                c1.NNCell = this.m_TbCells[index];
-                this.m_TbCells[index].SpriteCell = c1;
-                c1.on('pointerdown', (pt, x, y, evt)=> {
-                    this.m_IsTouchDown = true;
-                    [this.m_PointerRow, this.m_PointerCol] = this.GetRowColByIndex(c1.NNIndex);
-                    this.OnBtnDown(c1);
-                });
-                c1.on('pointerover', (pt, x, y, evt)=> {  
-                    let [iR, iC] = this.GetRowColByIndex(c1.NNIndex);
-                    if(this.m_IsTouchDown == true && (
-                        this.m_PointerRow == iR || this.m_PointerCol == iC)){
-                        this.OnBtnDown(c1);
+    CreateTableData(){
+        do{
+            for (let i = 0; i < this.m_NumRow; i++) {
+                for (let j = 0; j < this.m_NumCol; j++) {
+                    let index = i * this.m_NumCol + j;
+                    if(index >= this.m_TbCells.length){
+                        this.m_TbCells.push(new NNCell(index, 0, 0));
                     }
-                });  
-                this.m_ObjContainer.add(c1);
-                if (i == 0) {
-                    this.m_ObjContainer.add(this.DrawColumn(j));
+                    this.m_TbCells[index].Reset();
                 }
             }
-        }
-        //加分割线
-        let MaxWidth = this.m_SizeCell*this.m_NumCol;
-        let MaxHeight = this.m_SizeCell*this.m_NumRow;
-        let lineH = this.add.line(0, 0, 0, MaxHeight*0.5, MaxWidth, MaxHeight*0.5, 0x000).setOrigin(0);
-        lineH.setLineWidth(10);
-        let lineV = this.add.line(0, 0, MaxWidth*0.5, 0, MaxWidth*0.5, MaxHeight, 0x000).setOrigin(0);
-        lineV.setLineWidth(10);
-        this.m_ObjContainer.add(lineH);
-        this.m_ObjContainer.add(lineV);
-        //3.添加事件
-        this.input.on('pointerdown', (pointer) => {
-        });
-
-        this.input.on('pointerup', (pointer) => {
-            this.m_IsTouchDown = false;
-        });
-
-        //4.辅助功能
-        this.CreatTimeCard(CenterX,CenterY);
-        this.CreateButtons(CenterX, CenterY);
+        }while(!this.CheckTableData())
     }
 
-    update(){
-    }
-
-    OnBtnDown(c1) {
-        let cell = this.m_TbCells[c1.NNIndex];
-        if(cell.ShowIndex > 0){return;} 
-        cell.SpriteCell.setFrame(cell.RealIndex);
-        if (cell.RealIndex == 1) {
-            cell.IsRight = true;
-        }
-        else if (cell.RealIndex == 2) {
-        }
-        
-        if(this.m_SelectedMode == cell.RealIndex){
-            //检查是否正确
-            this.CheckByCell(cell.Index);
-        }
-        if(this.m_SelectedMode != cell.RealIndex){
-            //点击错误
-            cell.SpriteCell.setTint(0xff0000);
-        } 
-        cell.ShowIndex = cell.RealIndex;
-    }
-
-    RemoveRightColor(index){
-        this.m_ObjContainer.each((child)=>{
-            if(child["NNIndex"] && child["NNIndex"] == index){
-                child.destroy();
+    CheckTableData(){
+        for(let i=0;i<this.m_NumRow;i++){
+            let strIdxs = this.GetBlockIndexsByCol(i);
+            if(strIdxs.length == 0 || strIdxs.length > 4){
+                return false;
             }
-        })
+        }
+
+        for(let i=0;i<this.m_NumCol;i++){
+            let strIdxs = this.GetBlockIndexsByRow(i);
+            if(strIdxs.length == 0 || strIdxs.length > 4){
+                return false;
+            }
+        }
+
+        return true;
     }
-
-    DrawRow(index, isRight = false) {
-        let x = -200;
-        let y = index * this.m_SizeCell;
-        let gr = this.add.container(x, y);
-        if (isRight) {
-            this.RemoveRightColor(30000+index);
-            //置灰
-            let g2 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0x00ff00, alpha: 0.3 } });
-            g2.fillRoundedRect(0, 0, 190, 80, 10);
-            gr.add(g2);
-            gr.NNIndex = 30000+index;
-            return gr;
-        }
-
-        let g1 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0xe1e5f1, alpha: 1.0 } });
-        g1.fillRoundedRect(0, 0, 190, 80, 10);
-        g1.strokeRoundedRect(0, 0, 190, 80, 10);
-        gr.NNIndex = 10000 + index;
-        gr.add(g1);
-        let strIdxs = this.GetBlockIndexsByCol(index);
-        let strTmp = "";
-        for (let i = 0; i < strIdxs.length; i++) {
-            let text = this.add.text(25 * strTmp.length + 10, 20, `${strIdxs[i]}`, { fontFamily: '微软雅黑', fontSize: '35px', fill: '#000' });
-            text.setOrigin(0);
-            strTmp += text.text + " ";
-            gr.add(text);
-        }
-        return gr;
-    }
-
-    DrawColumn(index, isRight = false) {
-        let x = index * this.m_SizeCell;
-        let y = -200;
-        let gr = this.add.container(x, y);
-        if (isRight) {
-            this.RemoveRightColor(40000+index);
-            //置灰
-            let g2 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0x00ff00, alpha: 0.3 } });
-            g2.fillRoundedRect(0, 0, 80, 190, 10);
-            gr.add(g2);
-            gr.NNIndex = 40000+index;
-            return gr;
-        }
-        let g1 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0xe1e5f1, alpha: 1.0 } });
-        g1.fillRoundedRect(0, 0, 80, 190, 10);
-        g1.strokeRoundedRect(0, 0, 80, 190, 10);
-        gr.NNIndex = 20000 + index;
-        gr.add(g1);
-        let strIdxs = this.GetBlockIndexsByRow(index);
-        for (let i = 0; i < strIdxs.length; i++) {
-            let text = this.add.text(20, 140 - 45 * i, `${strIdxs[strIdxs.length - i - 1]}`, { fontFamily: '微软雅黑', fontSize: '35px', fill: '#000' });
-            text.setOrigin(0);
-            gr.add(text);
-        }
-        return gr;
-    }
-
+    
     GetBlockIndexsByRow(index) {
         let arr1 = [];
         for (let j = 0; j < this.m_NumCol; j++) {
@@ -275,12 +130,6 @@ export default class Nonograms extends Phaser.Scene {
         return [iR, iC];
     }
 
-    CheckByCell(index) {
-        let [iR,iC] = this.GetRowColByIndex(index);
-        this.CheckByRow(iR);
-        this.CheckByCol(iC);
-    }
-
     CheckByRow(index) {
         let isRight = true;
         for (let j = 0; j < this.m_NumCol; j++) {
@@ -292,17 +141,9 @@ export default class Nonograms extends Phaser.Scene {
         }
 
         if (isRight) {
-            //如果正确 所有的 X 都显示 ，并序号 显示灰色
-            for (let j = 0; j < this.m_NumCol; j++) {
-                let idx = index * this.m_NumCol + j;
-                if (this.m_TbCells[idx].RealIndex == 2) {
-                    this.m_TbCells[idx].ShowIndex = this.m_TbCells[idx].RealIndex;
-                    this.m_TbCells[idx].SpriteCell.setFrame(this.m_TbCells[idx].RealIndex);
-                }
-            }
-            //置灰
-            this.m_ObjContainer.add(this.DrawColumn(index, true));
+            
         }
+        return isRight;
     }
 
     CheckByCol(index) {
@@ -316,40 +157,237 @@ export default class Nonograms extends Phaser.Scene {
         }
 
         if (isRight) {
+            
+        }
+
+        return isRight;
+    }
+
+    /** @returns {NNCell} */
+    At(index){
+        return this.m_TbCells[index];
+    }
+
+    SetSprite(index, c1){
+        this.m_TbCells[index].SpriteCell = c1;
+    }
+}
+
+export default class Nonograms extends Phaser.Scene {
+    constructor() {
+        super({
+            key: "Nonograms"
+        });
+    }
+
+    preload() {
+
+    }
+    /** @type{number} */
+    m_NumCol = 10;
+    /** @type {number} */
+    m_NumRow = 10;
+    /** @type {NNTable} */
+    m_TbData;
+
+    /** @type{number} */
+    m_SizeCell = 85;
+
+    /** @type {Phaser.GameObjects.Container} */
+    m_ObjContainer;
+
+    /** @type {boolean} */
+    m_IsTouchDown = false;
+ 
+    /** @type {number} */
+    m_PointerRow = -1;
+    /** @type {number} */
+    m_PointerCol = -1;
+
+    /** @type {number} 选择模式 */
+    m_SelectedMode = 1;
+
+    /** @type {TimerAnimation} */
+    m_Timer;
+
+    create() {
+        let CenterX = this.scale.width / 2;
+        let CenterY = this.scale.height / 2;
+        //1.生成表格
+        this.m_TbData = new NNTable(this.m_NumCol, this.m_NumRow);
+        this.m_TbData.CreateTableData();
+        //2.绘制
+        this.m_ObjContainer = this.add.container(750, CenterY - 500);
+        let that = this;
+        for (let i = 0; i < this.m_NumRow; i++) {
+            this.m_ObjContainer.add(this.DrawRow(i));
+            for (let j = 0; j < this.m_NumCol; j++) {
+                let index = i * this.m_NumCol + j;
+                let c1 = this.add.sprite(this.m_SizeCell * i, this.m_SizeCell * j, 'imgCells', this.m_TbData.At(index).ShowIndex).setOrigin(0);
+                c1.setInteractive();
+                c1.NNIndex = index;
+                c1.NNCell = this.m_TbData.At(index);
+                this.m_TbData.SetSprite(index, c1);
+                c1.on('pointerdown', (pt, x, y, evt)=> {
+                    this.m_IsTouchDown = true;
+                    [this.m_PointerRow, this.m_PointerCol] = this.m_TbData.GetRowColByIndex(c1.NNIndex);
+                    this.OnBtnDown(c1);
+                });
+                c1.on('pointerover', (pt, x, y, evt)=> {  
+                    let [iR, iC] = this.m_TbData.GetRowColByIndex(c1.NNIndex);
+                    if(this.m_IsTouchDown == true && (
+                        this.m_PointerRow == iR || this.m_PointerCol == iC)){
+                        this.OnBtnDown(c1);
+                    }
+                });  
+                this.m_ObjContainer.add(c1);
+                if (i == 0) {
+                    this.m_ObjContainer.add(this.DrawColumn(j));
+                }
+            }
+        }
+        //加分割线
+        let MaxWidth = this.m_SizeCell*this.m_NumCol;
+        let MaxHeight = this.m_SizeCell*this.m_NumRow;
+        let lineH = this.add.line(0, 0, 0, MaxHeight*0.5, MaxWidth, MaxHeight*0.5, 0x000).setOrigin(0);
+        lineH.setLineWidth(10);
+        let lineV = this.add.line(0, 0, MaxWidth*0.5, 0, MaxWidth*0.5, MaxHeight, 0x000).setOrigin(0);
+        lineV.setLineWidth(10);
+        this.m_ObjContainer.add(lineH);
+        this.m_ObjContainer.add(lineV);
+        //3.添加事件
+        this.input.on('pointerdown', (pointer) => {
+        });
+
+        this.input.on('pointerup', (pointer) => {
+            this.m_IsTouchDown = false;
+        });
+
+        //4.辅助功能
+        this.CreatTimeCard(CenterX,CenterY);
+        this.CreateButtons(CenterX, CenterY);
+        //5.其他
+        this.CreateTitle(CenterX, CenterY);
+    }
+
+    update(){
+    }
+
+    OnBtnDown(c1) {
+        let cell = this.m_TbData.At(c1.NNIndex);
+        if(cell.ShowIndex > 0){return;} 
+        cell.SpriteCell.setFrame(cell.RealIndex);
+        if (cell.RealIndex == 1) {
+            cell.IsRight = true;
+        }
+        else if (cell.RealIndex == 2) {
+        }
+        //检查是否正确
+        this.CheckByCell(cell.Index);
+        if(this.m_SelectedMode != cell.RealIndex){
+            //点击错误
+            cell.SpriteCell.setTint(0xff0000);
+        } 
+        cell.ShowIndex = cell.RealIndex;
+    }
+
+    RemoveRightColor(index){
+        this.m_ObjContainer.each((child)=>{
+            if(child["NNIndex"] && child["NNIndex"] == index){
+                child.destroy();
+            }
+        })
+    }
+
+    DrawRow(index, isRight = false) {
+        let x = -200;
+        let y = index * this.m_SizeCell;
+        let gr = this.add.container(x, y);
+        if (isRight) {
+            this.RemoveRightColor(30000+index);
+            //置灰
+            let g2 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0x00ff00, alpha: 0.3 } });
+            g2.fillRoundedRect(0, 0, 190, 80, 10);
+            gr.add(g2);
+            gr.NNIndex = 30000+index;
+            return gr;
+        }
+
+        let g1 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0xe1e5f1, alpha: 1.0 } });
+        g1.fillRoundedRect(0, 0, 190, 80, 10);
+        g1.strokeRoundedRect(0, 0, 190, 80, 10);
+        gr.NNIndex = 10000 + index;
+        gr.add(g1);
+        let strIdxs = this.m_TbData.GetBlockIndexsByCol(index);
+        let strTmp = "";
+        for (let i = 0; i < strIdxs.length; i++) {
+            let text = this.add.text(25 * strTmp.length + 10, 20, `${strIdxs[i]}`, { fontFamily: '微软雅黑', fontSize: '35px', fill: '#000' });
+            text.setOrigin(0);
+            strTmp += text.text + " ";
+            gr.add(text);
+        }
+        return gr;
+    }
+
+    DrawColumn(index, isRight = false) {
+        let x = index * this.m_SizeCell;
+        let y = -200;
+        let gr = this.add.container(x, y);
+        if (isRight) {
+            this.RemoveRightColor(40000+index);
+            //置灰
+            let g2 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0x00ff00, alpha: 0.3 } });
+            g2.fillRoundedRect(0, 0, 80, 190, 10);
+            gr.add(g2);
+            gr.NNIndex = 40000+index;
+            return gr;
+        }
+        let g1 = this.add.graphics({ lineStyle: { color: 0x000000, width: 3 }, fillStyle: { color: 0xe1e5f1, alpha: 1.0 } });
+        g1.fillRoundedRect(0, 0, 80, 190, 10);
+        g1.strokeRoundedRect(0, 0, 80, 190, 10);
+        gr.NNIndex = 20000 + index;
+        gr.add(g1);
+        let strIdxs = this.m_TbData.GetBlockIndexsByRow(index);
+        for (let i = 0; i < strIdxs.length; i++) {
+            let text = this.add.text(20, 140 - 45 * i, `${strIdxs[strIdxs.length - i - 1]}`, { fontFamily: '微软雅黑', fontSize: '35px', fill: '#000' });
+            text.setOrigin(0);
+            gr.add(text);
+        }
+        return gr;
+    }
+
+    CheckByCell(index) {
+        let [iR,iC] = this.m_TbData.GetRowColByIndex(index);
+        if(this.m_TbData.CheckByRow(iR)){
             //如果正确 所有的 X 都显示 ，并序号 显示灰色
-            for (let i = 0; i < this.m_NumRow; i++) {
-                let idx = i * this.m_NumCol + index;
-                if (this.m_TbCells[idx].RealIndex == 2) {
-                    this.m_TbCells[idx].ShowIndex = this.m_TbCells[idx].RealIndex;
-                    this.m_TbCells[idx].SpriteCell.setFrame(this.m_TbCells[idx].RealIndex);
+            for (let j = 0; j < this.m_NumCol; j++) {
+                let idx = iR * this.m_NumCol + j;
+                if (this.m_TbData.At(idx).RealIndex == 2) {
+                    this.m_TbData.At(idx).ShowIndex = this.m_TbData.At(idx).RealIndex;
+                    this.m_TbData.At(idx).SpriteCell.setFrame(this.m_TbData.At(idx).RealIndex);
                 }
             }
             //置灰
-            this.m_ObjContainer.add(this.DrawRow(index, true));
+            this.m_ObjContainer.add(this.DrawColumn(iR, true));
+        }
+        if(this.m_TbData.CheckByCol(iC)){
+            //如果正确 所有的 X 都显示 ，并序号 显示灰色
+            for (let i = 0; i < this.m_NumRow; i++) {
+                let idx = i * this.m_NumCol + iC;
+                if (this.m_TbData.At(idx).RealIndex == 2) {
+                    this.m_TbData.At(idx).ShowIndex = this.m_TbData.At(idx).RealIndex;
+                    this.m_TbData.At(idx).SpriteCell.setFrame(this.m_TbData.At(idx).RealIndex);
+                }
+            }
+            //置灰
+            this.m_ObjContainer.add(this.DrawRow(iC, true));
         }
     }
 
     CreatTimeCard(x,y){
         //计时
-        this.m_TimerCard = this.add.text(x, y-1000, '00:00', { fontSize: '120px', fill: '#000' });  
-        this.m_TimerCard.setOrigin(0);
-
-        // 创建一个计时器事件，每秒触发一次  
-        this.time.addEvent({  
-            delay: 1000,  
-            callback: ()=>{
-                this.m_TimerSeconds++;  
-                let s = this.m_TimerSeconds % 60;
-                let m = parseInt(this.m_TimerSeconds / 60);
-                let ss = s.toString().padStart(2,'0');
-                let mm = m.toString().padStart(2,'0');
-                this.m_TimerCard.setText(`${mm}:${ss}`);  
-            },
-            callbackScope: this,  
-            loop: true  
-        });  
-
-        
+        this.m_Timer = new TimerAnimation();
+        this.m_Timer.CreatTimeCard(this, x, y-880);
     }
 
     CreateButtons(x,y){
@@ -378,22 +416,25 @@ export default class Nonograms extends Phaser.Scene {
         })
     }
 
+    CreateTitle(x,y){
+        let text = this.add.text(x-250,y-1080, '《二头乌游戏--数织》', { fontFamily: '微软雅黑', fontSize: '82px', fill: '#000' });
+    }
+
     Reset(){
         this.m_ObjContainer.each((child)=>{
             if(child["NNIndex"] && child["NNIndex"] > 10000){
                 child.destroy();
             }
         })
-        this.m_TimerCard.setText("00:00");
-        this.m_TimerSeconds = 0;
+        this.m_Timer.Reset();
         //重新生成数据
-        this.CreateTableData();
+        this.m_TbData.CreateTableData();
         //格式化棋盘
         for (let i = 0; i < this.m_NumRow; i++) {
             for (let j = 0; j < this.m_NumCol; j++) {
                 let index = i * this.m_NumCol + j;
-                this.m_TbCells[index].SpriteCell.setFrame(this.m_TbCells[index].ShowIndex);
-                this.m_TbCells[index].SpriteCell.setTint(0xffffff);
+                this.m_TbData.At(index).SpriteCell.setFrame(this.m_TbData.At(index).ShowIndex);
+                this.m_TbData.At(index).SpriteCell.setTint(0xffffff);
             }
         }
 
@@ -405,38 +446,5 @@ export default class Nonograms extends Phaser.Scene {
             this.m_ObjContainer.add(this.DrawColumn(j));
         }
     }
-
-    CreateTableData(){
-        do{
-            for (let i = 0; i < this.m_NumRow; i++) {
-                for (let j = 0; j < this.m_NumCol; j++) {
-                    let index = i * this.m_NumCol + j;
-                    if(index >= this.m_TbCells.length){
-                        this.m_TbCells.push(new NNCell(index, 0, 0));
-                    }
-                    this.m_TbCells[index].Reset();
-                }
-            }
-        }while(!this.CheckTableData())
-    }
-
-    CheckTableData(){
-        for(let i=0;i<this.m_NumRow;i++){
-            let strIdxs = this.GetBlockIndexsByCol(i);
-            if(strIdxs.length == 0 || strIdxs.length > 4){
-                return false;
-            }
-        }
-
-        for(let i=0;i<this.m_NumCol;i++){
-            let strIdxs = this.GetBlockIndexsByRow(i);
-            if(strIdxs.length == 0 || strIdxs.length > 4){
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
 }
