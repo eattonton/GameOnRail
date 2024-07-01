@@ -531,13 +531,13 @@ export default class ShiKaKu extends Phaser.Scene {
         let cells = this.m_Table.GetCellsByRange([this.m_PointerCol, this.m_PointerRow, x, y]);
         if (cells.length <= 1) return;
         ++this.m_PointerNumber;
-        let aColor = GetColorByIndex(this.m_PointerNumber);
+        let aColor = GetColorByIndex(this.m_PointerNumber*10+Phaser.Math.Between(0,9));
         for (let c1 of cells) {
             c1.SetColor(aColor);
             c1.PointerIndex = this.m_PointerNumber;
         }
         if (this.m_Table.IsFinished()) {
-            console.log("Successed");
+            //console.log("Successed");
             this.m_Table.SetColor(null, 0x00ff00);
         }
     }
