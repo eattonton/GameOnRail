@@ -46,8 +46,38 @@ function GetRandQueue(array, size) {
     return res;
 }
 
+//两直线段是否相交
+function SegmentsIntersect(A, B, C, D) {  
+    // 计算向量  
+    let ABx = B[0] - A[0], ABy = B[1] - A[1];  
+    let CDx = D[0] - C[0], CDy = D[1] - C[1];  
+  
+    // 计算叉乘，判断是否平行  
+    let cross = ABx * CDy - ABy * CDx;  
+    if (cross === 0) {  
+        // 平行或共线
+        return false;  
+    }  
+  
+    // 使用向量叉乘和点积判断交点是否在线段上  
+    let t = (D[0] - A[0]) * ABy - (D[1] - A[1]) * ABx;  
+    let u = CDx * ABy - CDy * ABx;  
+  
+    // 如果t和u在0到1之间（包括0和1），则交点在线段上  
+    if (t * u < 0) {  
+        return false;  
+    }  
+  
+    let tDiv = t / cross;  
+    let uDiv = u / cross;  
+  
+    // 检查交点是否在线段上  
+    return (tDiv >= 0 && tDiv <= 1) && (uDiv >= 0 && uDiv <= 1);  
+}  
+   
 export {
     RandomInt,
     GetRandQueueInRange,
-    GetRandQueue
+    GetRandQueue,
+    SegmentsIntersect
 }

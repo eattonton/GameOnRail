@@ -3,6 +3,7 @@ import TT from "./gameconfig";
 import Menu from "./scene/menu";
 import Nonograms from "./scene/nonograms"
 import ShiKaKu from "./scene/shikaku";
+import HaShi from "./scene/hashi";
 
 const config = {
     type: Phaser.AUTO,
@@ -24,7 +25,7 @@ const config = {
     input: {
         gamepad: true
     },
-    scene: [Menu,Nonograms,ShiKaKu]
+    scene: [Menu,Nonograms,ShiKaKu,HaShi]
 
 }
 

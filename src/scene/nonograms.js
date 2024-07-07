@@ -173,6 +173,7 @@ class NNTable{
     }
 }
 
+//数织
 export default class Nonograms extends Phaser.Scene {
     constructor() {
         super({
