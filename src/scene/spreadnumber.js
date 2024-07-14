@@ -77,26 +77,45 @@ class SNTable extends TBTable {
             }
         }
         //清除临近的同数值
-        for (let idx of path) {
-            let c1 = this.At(idx);
-            if (c1.ShowNum > 1) {
-                let inum = c1.ShowNum;
-                let nearArr = this.GetNearCells(idx);
-                let isClear = false;
-                for (let c2 of nearArr) {
-                    if (c2.ShowNum == c1.ShowNum) {
-                        score += inum;
-                        c2.ShowNum = 0;
-                        isClear = true;
+        let idxE = path[path.length-1];
+        let cEnd = this.At(idxE);
+        let idxNears = this.GetSameNumberAtNear(cEnd.ShowNum, path);
+        for (let idx of idxNears) {
+            let cnear = this.At(idx);
+            score += cnear.ShowNum;
+            cnear.ShowNum = 0;
+        }
+        if(cEnd && idxNears.length > 0){
+            score += cEnd.ShowNum;
+            cEnd.ShowNum = 0;
+        }
+        
+        return score;
+    }
+
+    /**
+     * 获得临近 相同的值的 路径
+     */
+    GetSameNumberAtNear(num1,path) {
+        let resArr = [];
+        if(path.length == 0){
+            return resArr;
+        }
+        let idx = path[path.length-1];
+        if (num1 > 1) {
+            let nearArr = this.GetNearCells(idx);
+            for (let c2 of nearArr) {
+                if (c2.ShowNum == num1 && path.indexOf(c2.Index) == -1) {
+                    resArr.push(c2.Index);
+                    let arr2 = this.GetSameNumberAtNear(num1, [].concat(path, resArr));
+                    if (arr2.length > 0) {
+                        resArr.push(...arr2);
                     }
-                }
-                if (isClear) {
-                    score += inum;
-                    c1.ShowNum = 0;
                 }
             }
         }
-        return score;
+
+        return resArr;
     }
 
     static CreateTableData(col, row) {
@@ -171,10 +190,10 @@ export default class SpreadNumbers extends Phaser.Scene {
     create() {
         let CenterX = this.scale.width / 2.0;
         let CenterY = this.scale.height / 2.0;
-        let boardW = (this.m_NumRow+2) * this.m_SizeCell;
+        let boardW = (this.m_NumRow + 2) * this.m_SizeCell;
         //this.cameras.main.setZoom(1.0);
         //1.绘制
-        this.m_ObjContainer = this.add.container(CenterX - 0.5 * boardW, CenterY - boardW +200);
+        this.m_ObjContainer = this.add.container(CenterX - 0.5 * boardW, CenterY - boardW + 200);
         for (let i = 0; i < this.m_NumRow; i++) {
             for (let j = 0; j < this.m_NumCol; j++) {
                 let index = i * this.m_NumCol + j;
@@ -185,7 +204,7 @@ export default class SpreadNumbers extends Phaser.Scene {
             }
         }
         this.m_ObjContainer.setScale(2);
-        
+
         //3.事件
         this.input.on('pointerup', (pointer) => {
             this.OnMouseUp(this.m_MoveIndex);
@@ -238,7 +257,7 @@ export default class SpreadNumbers extends Phaser.Scene {
             if (c1.ShowNum > 0) {
                 c1.SpriteCell.NNText.setText(`${c1.ShowNum}`);
             }
-            else{
+            else {
                 c1.SpriteCell.NNText.setText('');
             }
         }
@@ -248,7 +267,7 @@ export default class SpreadNumbers extends Phaser.Scene {
         this.m_MoveIndex = -1;
         this.m_Score = 0;
         //设置分数
-        this.SetTextInfo(-1,-1,-1);
+        this.SetTextInfo(-1, -1, -1);
     }
 
     CreateButtons(x, y) {
@@ -262,7 +281,7 @@ export default class SpreadNumbers extends Phaser.Scene {
         let btnMenu = this.add.sprite(x + 250, y + 650, 'imgBtns', 3).setOrigin(0);
         btnMenu.setInteractive();
         btnMenu.on('pointerdown', () => {
-            this.scene.start("Menu","SpreadNumbers");
+            this.scene.start("Menu", "SpreadNumbers");
         })
     }
 
@@ -328,6 +347,19 @@ export default class SpreadNumbers extends Phaser.Scene {
         }
     }
 
+    SetNearColorByPath() {
+        if (this.m_SelPath.length > 1) {
+            let num1 = this.m_CurrentNumber - this.m_SelPath.length +1;
+            let cellNear = this.m_Table.GetSameNumberAtNear(num1, this.m_SelPath);
+            for (let idxNear of cellNear) {
+                let cnear = this.m_Table.At(idxNear);
+                if(cnear){
+                    cnear.SpriteCell.setTint(0xf1ff00);
+                }
+            }
+        }
+    }
+
     OnMouseDown(s1) {
         let c1 = this.m_Table.At(this.m_DownIndex);
         if (c1.ShowNum <= 0) return;
@@ -356,8 +388,8 @@ export default class SpreadNumbers extends Phaser.Scene {
         }
         if (this.m_SelPath.length >= this.m_CurrentNumber) return;
         let idx0 = this.m_MoveIndex;
-        if(this.m_SelPath.length > 1){
-            idx0 = this.m_SelPath[this.m_SelPath.length-1];
+        if (this.m_SelPath.length > 1) {
+            idx0 = this.m_SelPath[this.m_SelPath.length - 1];
         }
         let [x, y] = this.m_Table.GetColRowByIndex(idx0);
         let [x2, y2] = this.m_Table.GetColRowByIndex(idx);
@@ -372,14 +404,7 @@ export default class SpreadNumbers extends Phaser.Scene {
             let num2 = this.m_CurrentNumber - this.m_SelPath.length + 1;
             this.SetTextInfo(num2);
             //高亮周边
-            if(this.m_SelPath.length > 1){
-                let cellNear = this.m_Table.GetNearCells(this.m_SelPath[this.m_SelPath.length-1]);
-                for(let cnear of cellNear){
-                    if(cnear.ShowNum == num2){
-                        cnear.SpriteCell.setTint(0xf1ff00);
-                    }
-                }
-            }
+            this.SetNearColorByPath();
         }
 
     }
@@ -396,7 +421,7 @@ export default class SpreadNumbers extends Phaser.Scene {
             if (!this.m_Table.AddTwoNumber()) {
                 //添加失败
                 console.log("游戏结束");
-                if(this.m_Score > TT.SpreadNumberScore){
+                if (this.m_Score > TT.SpreadNumberScore) {
                     TT.SpreadNumberScore = this.m_Score;
                     TT.SaveRecord();
                 }
@@ -425,16 +450,16 @@ export default class SpreadNumbers extends Phaser.Scene {
         return false;
     }
 
-    SetTextInfo(num0, num1, num2=-1) {
-        if(!this.m_TextGroup || this.m_TextGroup.getChildren().length < 3) return;
+    SetTextInfo(num0, num1, num2 = -1) {
+        if (!this.m_TextGroup || this.m_TextGroup.getChildren().length < 3) return;
         if (num0 > 0) {
             let text0 = this.m_TextGroup.getChildren()[0];
             text0.setText(`${num0}`);
             let s1 = this.m_DictSprite[this.m_MoveIndex];
             if (s1) {
                 text0.setOrigin(0.5, 0.5);
-                let x0 = s1.parentContainer.x*s1.parentContainer.parentContainer.scale + s1.parentContainer.parentContainer.x;
-                let y0 = s1.parentContainer.y*s1.parentContainer.parentContainer.scale + s1.parentContainer.parentContainer.y;
+                let x0 = s1.parentContainer.x * s1.parentContainer.parentContainer.scale + s1.parentContainer.parentContainer.x;
+                let y0 = s1.parentContainer.y * s1.parentContainer.parentContainer.scale + s1.parentContainer.parentContainer.y;
                 text0.setPosition(x0, y0);
             }
         } else {
@@ -443,10 +468,10 @@ export default class SpreadNumbers extends Phaser.Scene {
 
         if (num1 >= 0) {
             this.m_TextGroup.getChildren()[1].setText(`分数\n${num1}`);
-        }else if(num1 == -1){
+        } else if (num1 == -1) {
             this.m_TextGroup.getChildren()[1].setText('分数');
         }
-        if(num2 == -1){
+        if (num2 == -1) {
             num2 = TT.SpreadNumberScore;
         }
         if (num2 >= 0) {
