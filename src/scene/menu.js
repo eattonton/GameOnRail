@@ -1,27 +1,23 @@
 import Phaser from "phaser";
-import pngCells from "../assets/cells.png"
-import pngBtns from "../assets/btns.png"
-import pngBridges from "../assets/bridges.png"
+import TT from "../gameconfig"
 
 export default class Menu extends Phaser.Scene {
     constructor() {
         super({
-            key: "Menu",
-            active: true
+            key: "Menu"
         });
     }
 
     preload() {
-        if(document.getElementById("homeload")) document.getElementById("homeload").remove();
-        this.load.spritesheet('imgCells', pngCells, { frameWidth: 85, frameHeight: 85 });
-        this.load.spritesheet('imgBtns', pngBtns, {frameWidth:150, frameHeight:150});
-        this.load.spritesheet('imgBridges', pngBridges, { frameWidth: 85, frameHeight: 19 });
+        
     }
 
     create() {
+        //恢复记录数据
+        TT.RestoreRecord();
         let CenterX = this.scale.width / 2;
         let CenterY = this.scale.height / 2;
-
+     
         this.CreateButton(CenterX - 250, CenterY - 580, "二头乌游戏", null);
         this.CreateButton(CenterX - 250, CenterY - 400, "数  织", () => {
             this.scene.start('Nonograms');
@@ -32,6 +28,10 @@ export default class Menu extends Phaser.Scene {
         this.CreateButton(CenterX - 250, CenterY - 40, "数  桥", ()=>{
             this.scene.start('HaShi');
         });
+        this.CreateButton(CenterX - 250, CenterY + 140, "数字消消", ()=>{
+            this.scene.start('SpreadNumbers');
+        });
+ 
     }
 
     CreateButton(x, y, content, cb) {

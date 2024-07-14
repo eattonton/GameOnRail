@@ -12,6 +12,9 @@ class TTGameConfig {
         this.height = 0;
         /** @type {boolean} */
         this.IsLandscape = false;
+
+        /** @type {number} 数字消消分数*/
+        this.SpreadNumberScore = 0;
     }
 
     CenterX(){
@@ -23,22 +26,21 @@ class TTGameConfig {
     }
 
     SaveRecord(){
-        let data = {numMax:this.NumMax, numRecordMax:this.NumRecordMax};
+        let data = {SpreadNumberScore:this.SpreadNumberScore};
         localStorage.setItem("data",JSON.stringify(data));
     }
 
     RestoreRecord(){
         let data=JSON.parse(localStorage.getItem("data"));
+
         if(data){
-            this.NumMax = data["numMax"] || 5;
-            this.NumRecordMax = data["numRecordMax"] || 0;
+            this.SpreadNumberScore = data["SpreadNumberScore"] || 0;
         }
     }
 
     ClearRecord(){
         localStorage.removeItem("data");
-        this.NumMax = 5;
-        this.NumRecordMax = 0;
+        this.SpreadNumberScore = 0;
     }
 
 }

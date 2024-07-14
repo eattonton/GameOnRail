@@ -1,9 +1,11 @@
 import Phaser from "phaser";
 import TT from "./gameconfig";
+import Preload from "./scene/preload";
 import Menu from "./scene/menu";
 import Nonograms from "./scene/nonograms"
 import ShiKaKu from "./scene/shikaku";
 import HaShi from "./scene/hashi";
+import SpreadNumbers from "./scene/spreadnumber";
 
 const config = {
     type: Phaser.AUTO,
@@ -25,7 +27,7 @@ const config = {
     input: {
         gamepad: true
     },
-    scene: [Menu,Nonograms,ShiKaKu,HaShi]
+    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers]
 
 }
 
@@ -44,3 +46,4 @@ class GameConfig extends Phaser.Game {
 }
 
 TT.game = new GameConfig(config);
+
