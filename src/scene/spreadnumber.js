@@ -72,12 +72,21 @@ class SNTable extends TBTable {
         for (let idx of path) {
             let c1 = this.At(idx);
             if (c1.ShowNum == 1) {
-                ++score;
-                c1.ShowNum = 0;
+                let idxNears1 = this.GetSameNumberAtNear(c1.ShowNum, [idx]);
+                if (idxNears1.length > 0) {
+                    for (let idxNear1 of idxNears1) {
+                        let cnear = this.At(idxNear1);
+                        score += cnear.ShowNum;
+                        cnear.ShowNum = 0;
+                    }
+                    ++score;
+                    c1.ShowNum = 0;
+                }
             }
         }
+
         //清除临近的同数值
-        let idxE = path[path.length-1];
+        let idxE = path[path.length - 1];
         let cEnd = this.At(idxE);
         let idxNears = this.GetSameNumberAtNear(cEnd.ShowNum, path);
         for (let idx of idxNears) {
@@ -85,36 +94,33 @@ class SNTable extends TBTable {
             score += cnear.ShowNum;
             cnear.ShowNum = 0;
         }
-        if(cEnd && idxNears.length > 0){
+        if (cEnd && idxNears.length > 0) {
             score += cEnd.ShowNum;
             cEnd.ShowNum = 0;
         }
-        
+
         return score;
     }
 
     /**
      * 获得临近 相同的值的 路径
      */
-    GetSameNumberAtNear(num1,path) {
+    GetSameNumberAtNear(num1, path) {
         let resArr = [];
-        if(path.length == 0){
+        if (path.length == 0) {
             return resArr;
         }
-        let idx = path[path.length-1];
-        if (num1 > 1) {
-            let nearArr = this.GetNearCells(idx);
-            for (let c2 of nearArr) {
-                if (c2.ShowNum == num1 && path.indexOf(c2.Index) == -1) {
-                    resArr.push(c2.Index);
-                    let arr2 = this.GetSameNumberAtNear(num1, [].concat(path, resArr));
-                    if (arr2.length > 0) {
-                        resArr.push(...arr2);
-                    }
+        let idx = path[path.length - 1];
+        let nearArr = this.GetNearCells(idx);
+        for (let c2 of nearArr) {
+            if (c2.ShowNum == num1 && path.indexOf(c2.Index) == -1) {
+                resArr.push(c2.Index);
+                let arr2 = this.GetSameNumberAtNear(num1, [].concat(path, resArr));
+                if (arr2.length > 0) {
+                    resArr.push(...arr2);
                 }
             }
         }
-
         return resArr;
     }
 
@@ -349,11 +355,11 @@ export default class SpreadNumbers extends Phaser.Scene {
 
     SetNearColorByPath() {
         if (this.m_SelPath.length > 1) {
-            let num1 = this.m_CurrentNumber - this.m_SelPath.length +1;
+            let num1 = this.m_CurrentNumber - this.m_SelPath.length + 1;
             let cellNear = this.m_Table.GetSameNumberAtNear(num1, this.m_SelPath);
             for (let idxNear of cellNear) {
                 let cnear = this.m_Table.At(idxNear);
-                if(cnear){
+                if (cnear) {
                     cnear.SpriteCell.setTint(0xf1ff00);
                 }
             }
