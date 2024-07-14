@@ -31,7 +31,7 @@ export default class Menu extends Phaser.Scene {
         this.CreateButton(CenterX - 250, CenterY + 140, "数字消消", ()=>{
             this.scene.start('SpreadNumbers');
         });
-        this.scene.start('SpreadNumbers');
+         
     }
 
     CreateButton(x, y, content, cb) {
