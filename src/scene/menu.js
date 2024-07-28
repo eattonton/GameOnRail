@@ -35,8 +35,7 @@ export default class Menu extends Phaser.Scene {
         this.CreateButton(CenterX - 250, CenterY + 320, "填填数字", ()=>{
             this.scene.start('FloodFill');
         });
-
-        this.scene.start('FloodFill');
+ 
     }
 
     CreateButton(x, y, content, cb) {
