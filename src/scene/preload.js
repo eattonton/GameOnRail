@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import pngCells from "../assets/cells.png"
 import pngBtns from "../assets/btns.png"
 import pngBridges from "../assets/bridges.png"
+import pngNumbers from "../assets/numbers.png"
 
 export default class Preload extends Phaser.Scene {
     constructor() {
@@ -16,6 +17,7 @@ export default class Preload extends Phaser.Scene {
         this.load.spritesheet('imgCells', pngCells, { frameWidth: 85, frameHeight: 85 });
         this.load.spritesheet('imgBtns', pngBtns, {frameWidth:150, frameHeight:150});
         this.load.spritesheet('imgBridges', pngBridges, { frameWidth: 85, frameHeight: 19 });
+        this.load.image('imgNumbers',pngNumbers);
         // 监听加载过程
         this.load.on('progress', (value) => {
             this.UpdateProgressBar(value)

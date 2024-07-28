@@ -6,6 +6,7 @@ import Nonograms from "./scene/nonograms"
 import ShiKaKu from "./scene/shikaku";
 import HaShi from "./scene/hashi";
 import SpreadNumbers from "./scene/spreadnumber";
+import FloodFill from "./scene/floodfill";
 
 const config = {
     type: Phaser.AUTO,
@@ -27,7 +28,7 @@ const config = {
     input: {
         gamepad: true
     },
-    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers]
+    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers,FloodFill]
 
 }
 
