@@ -144,7 +144,7 @@ export default class FloodFill extends Phaser.Scene {
     /** @type{number} */
     m_NumCol = 10;
     /** @type {number} */
-    m_NumRow = 10;
+    m_NumRow = 14;
     /** @type{number} */
     m_SizeCell = 85;
     /** @type {Phaser.GameObjects.Container} */
@@ -210,7 +210,7 @@ export default class FloodFill extends Phaser.Scene {
 
     CreateButtons(x, y) {
         //重新开始
-        let btnReset = this.add.sprite(x - 200, y + 500, 'imgBtns', 2).setOrigin(0);
+        let btnReset = this.add.sprite(x - 200, y + 750, 'imgBtns', 2).setOrigin(0);
         btnReset.setInteractive();
         btnReset.on('pointerdown', () => {
             this.Reset();

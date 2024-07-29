@@ -19,8 +19,8 @@ export default class IdentifyNumberUtil {
     m_BoardC;
     /** @type {CanvasPixel} */
     m_ImgDataC;
-    /** @type {Boolean} */
-    m_PointerUp = false;
+
+    resultEvent;
 
     constructor(name) {
         this.m_CanvasName = name;
@@ -32,6 +32,8 @@ export default class IdentifyNumberUtil {
             //不存在时创建
             this.m_BoardA.CreateCanvas(window.innerWidth, window.innerHeight, this.m_CanvasName);
             this.m_BoardA.AddMouseEvent(() => {
+                this.OnUiMouseDown();
+            }, () => {
                 this.OnUiMouseUp(cb);
             });
             document.body.appendChild(this.m_BoardA.ctx.canvas);
@@ -50,13 +52,14 @@ export default class IdentifyNumberUtil {
         });
     }
 
+    OnUiMouseDown() {
+        clearTimeout(this.resultEvent);
+    }
+
     OnUiMouseUp(cb) {
-        if (!this.m_PointerUp) {
-            this.m_PointerUp = true;
-            setTimeout(() => {
-                this.ResultNumber(cb);
-            }, 1000);
-        }
+        this.resultEvent = setTimeout(() => {
+            this.ResultNumber(cb);
+        }, 700);
     }
 
     ResultNumber(cb) {
@@ -72,12 +75,11 @@ export default class IdentifyNumberUtil {
         this.m_ImgDataB.Reload();
         let number = GetNumberByPixelData(this.m_ImgDataB.data, this.m_ImgDataC.splitDatas);
         number = number % 10;
-       
+
         this.m_BoardA.Clear();
         this.m_BoardB.Clear();
-        this.m_PointerUp = false;
 
-        if(typeof cb === "function"){
+        if (typeof cb === "function") {
             cb(number);
         }
     }

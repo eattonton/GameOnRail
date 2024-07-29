@@ -27,19 +27,28 @@ export default class DrawingBoard {
         this.ctx = canvas.getContext('2d');
     }
 
-    AddMouseEvent(cb) {
+    AddMouseEvent(cbDown, cbUp) {
         this.ctx.lineWidth = 20;
         this.ctx.lineJoin = 'round';
         this.ctx.imageSmoothingEnabled = false;
 
         const canvas = this.ctx.canvas;
-        canvas.onmousedown = (e) => { this.OnMouseDown(e); }
-        canvas.onmousemove = (e) => { this.OnMouseMove(e); }
-        canvas.onmouseup = (e) => { this.OnMouseUp(e); }
+        canvas.onmousedown = (e) => { 
+            this.OnMouseDown(e); 
+            if(typeof cbDown === "function"){ cbDown(); }
+        }
+        canvas.onmousemove = (e) => { 
+            this.OnMouseMove(e); 
+        }
+        canvas.onmouseup = (e) => { 
+            this.OnMouseUp(e); 
+            if(typeof cbUp === "function"){ cbUp(); }
+        }
 
         canvas.ontouchstart = (e) => {
             let pos = { offsetX: e.touches[0].pageX - canvas.offsetLeft, offsetY: e.touches[0].pageY - canvas.offsetTop }
             this.OnMouseDown(pos);
+            if(typeof cbDown === "function"){ cbDown(); }
         }
         canvas.ontouchmove = (e) => {
             let pos = { offsetX: e.touches[0].pageX - canvas.offsetLeft, offsetY: e.touches[0].pageY - canvas.offsetTop }
@@ -48,9 +57,7 @@ export default class DrawingBoard {
         }
         canvas.ontouchend = (e) => {
             this.OnMouseUp(null);
-            if(typeof cb === "function"){
-                cb();
-            }
+            if(typeof cbUp === "function"){ cbUp(); }
         }
     }
 
