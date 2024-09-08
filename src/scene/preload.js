@@ -3,6 +3,13 @@ import pngCells from "../assets/cells.png"
 import pngBtns from "../assets/btns.png"
 import pngBridges from "../assets/bridges.png"
 import pngNumbers from "../assets/numbers.png"
+//breakout
+import pngBall from "../assets/breakout/ball.png"
+import pngBall2 from "../assets/breakout/ball2.png"
+import pngBalls from "../assets/breakout/balls.png"
+import pngBrick from "../assets/breakout/brick.png"
+import pngDestroyed from "../assets/breakout/destroyed.png"
+import pngPaddle from "../assets/breakout/paddle.png"
 
 export default class Preload extends Phaser.Scene {
     constructor() {
@@ -18,6 +25,13 @@ export default class Preload extends Phaser.Scene {
         this.load.spritesheet('imgBtns', pngBtns, {frameWidth:150, frameHeight:150});
         this.load.spritesheet('imgBridges', pngBridges, { frameWidth: 85, frameHeight: 19 });
         this.load.image('imgNumbers',pngNumbers);
+        //breakout
+        this.load.image('imgBall', pngBall);
+        this.load.image('imgBall2', pngBall2);
+        this.load.spritesheet('imgBalls', pngBalls, { frameWidth: 40, frameHeight: 40 });
+        this.load.image('imgBrick', pngBrick);
+        this.load.image('imgDestroyed', pngDestroyed);
+        this.load.image('imgPaddle', pngPaddle);
         // 监听加载过程
         this.load.on('progress', (value) => {
             this.UpdateProgressBar(value)

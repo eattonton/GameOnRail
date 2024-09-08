@@ -7,6 +7,7 @@ import ShiKaKu from "./scene/shikaku";
 import HaShi from "./scene/hashi";
 import SpreadNumbers from "./scene/spreadnumber";
 import FloodFill from "./scene/floodfill";
+import Breakout from "./scene/breakout";
 
 const config = {
     type: Phaser.AUTO,
@@ -21,14 +22,14 @@ const config = {
     physics: {
         default: "arcade",
         arcade: {
-            debug: true,
+            debug: false,
             gravity: { y: 0 }
         },
     },
     input: {
         gamepad: true
     },
-    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers,FloodFill]
+    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers,FloodFill,Breakout]
 
 }
 
