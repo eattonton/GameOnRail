@@ -44,22 +44,27 @@ export default class GuideLineHelper{
         let l1 = new Phaser.Geom.Line(x0, y0, x0 + vtangent.x, y0 + vtangent.y);
         //反射1
         let l2 = this.ReflectOnBricks(l1);
-        let l3 = this.ReflectOnBricks(l2);
+        //let l3 = this.ReflectOnBricks(l2);
         //绘制
         this.lines = [];
         this.lines.push(l1);
         if (l2) {
             this.lines.push(l2);
         }
-        if (l3) {
-            this.lines.push(l3);
-        }
+        // if (l3) {
+        //     this.lines.push(l3);
+        // }
         //最后一个线段 长度设置成 100
         if(this.lines.length > 1){
             let ll = this.lines[this.lines.length-1];
-            Phaser.Geom.Line.SetToAngle(ll, ll.x1, ll.y1, Phaser.Geom.Line.Angle(ll), 100);
+            if(Phaser.Geom.Line.Length(ll) > 100){
+                Phaser.Geom.Line.SetToAngle(ll, ll.x1, ll.y1, Phaser.Geom.Line.Angle(ll), 100);
+                //判断l1的结束点是不是在包围盒内
+                if (!Phaser.Geom.Rectangle.Contains(boxs[0], ll.x2, ll.y2)) {
+                    this.lines.length = 1;
+                }
+            }
         }
-
         for(let ll of this.lines){
             this.g.strokeLineShape(ll);
         }
@@ -174,7 +179,7 @@ export default class GuideLineHelper{
         let distNear = 999999;
         for (let ptTmp of res) {
             ptTmp.dist = Phaser.Math.Distance.Between(l.x1, l.y1, ptTmp.x, ptTmp.y);
-            if (ptTmp.dist < distNear) {
+            if (ptTmp.dist > 0 && ptTmp.dist < distNear) {
                 distNear = ptTmp.dist;
                 resPt = ptTmp;
             }

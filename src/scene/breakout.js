@@ -2,6 +2,7 @@ import Phaser from "phaser"
 import { CreateNumberBalls } from "../js/textures";
 import SceneInit from "../js/sceneinit";
 import GuideLineHelper from "../js/guideline";
+import TT from "../gameconfig"
 
 const textStyle = {
     font: 'bold 28px Arial',
@@ -23,7 +24,7 @@ export default class Breakout extends Phaser.Scene {
 
     score = 0;
     isPointerDown = false;
-
+    ballScale = 0.6;
     /** @type {Phaser.GameObjects.Line} */
     guideLines = [];
     bricks = [];
@@ -44,7 +45,7 @@ export default class Breakout extends Phaser.Scene {
         this.paddle.setInteractive();
 
         let ball = this.physics.add.image(this.SCInfo.CX, this.SCInfo.CY + 390, 'imgBalls', 0);
-        ball.setScale(0.8);
+        ball.setScale(this.ballScale);
         ball.setCollideWorldBounds(true);
         ball.setBounce(1);
         //ball.setInteractive();
@@ -73,11 +74,19 @@ export default class Breakout extends Phaser.Scene {
         this.CreateBricks(this.SCInfo.CX, this.SCInfo.CY);
 
         this.scoreText = this.add.text(this.SCInfo.CX - 200, this.SCInfo.CY - 500, "Score:0", textStyle);
-        
+        this.bestText = this.add.text(this.SCInfo.CX + 180, this.SCInfo.CY - 500, "Best:0", textStyle).setOrigin(1,0);
+        TT.RestoreRecord();
+        this.bestText.setText(`Best:${TT.BreakoutScore}`);
         //add collision 
         this.physics.add.collider(this.balls, this.bricks, this.brickHit, null, this);
         this.physics.add.collider(this.balls, this.paddle, this.paddleHit, null, this);
         this.physics.add.overlap(this.bricks, this.paddle, ()=>{
+            //游戏结束
+            if(this.score > TT.BreakoutScore){
+                TT.BreakoutScore = this.score;
+                this.bestText.setText(`Best:${TT.BreakoutScore}`);
+                TT.SaveRecord();
+            }
             this.reset();
         }, null, this);
         //indicate path
@@ -126,7 +135,7 @@ export default class Breakout extends Phaser.Scene {
     startGame() {
         if(!this.guideLineHelper) return;
         let vec = this.guideLineHelper.GetStartVector();
-        if (vec.length() > 0) {
+        if (vec.length() > 0 && vec.y < -10) {
             //发射球
             vec.normalize();
             vec.setLength(1000);
@@ -166,19 +175,19 @@ export default class Breakout extends Phaser.Scene {
             this.score += brick.getData('num');
             this.scoreText.setText(`Score: ${this.score}`);
         }
- 
+        if (brick.getData('idx') == 0) {
+            brick.setData('idx',-1);
+            //增加小球
+            ++this.numSmallBall;
+        }
         this.tweens.add({
             targets: brick,
             ease: 'Power1',
             scaleX: 0,
             scaleY: 0,
             angle: 180,
-            duration: 500,
-            delay: 250,
+            duration: 400,
             onComplete: () => {
-                if (brick.getData('idx') == 0) {
-                    ++this.numSmallBall;
-                }
                 brick.destroy();
             }
         })
@@ -224,8 +233,10 @@ export default class Breakout extends Phaser.Scene {
             this.glineGraphics = this.add.graphics({ lineStyle: { width: 1, color: 0x0000aa }, fillStyle: { color: 0x0000aa } });
             this.guideLineHelper = new GuideLineHelper(this.glineGraphics);
         }
-
-        this.guideLineHelper.DrawGuideLine(this.x0, this.y0, this.x1, this.y1, boxs);
+        if(this.y1 > this.y0)
+        {   
+            this.guideLineHelper.DrawGuideLine(this.x0, this.y0, this.x1, this.y1, boxs);
+        }
     }
 
     CreateBall() {
@@ -233,7 +244,7 @@ export default class Breakout extends Phaser.Scene {
             return;
         }
         let ball2 = this.physics.add.image(this.balls[0].x, this.balls[0].y, 'imgBalls', 1);
-        ball2.setScale(0.8);
+        ball2.setScale(this.ballScale);
         ball2.setCollideWorldBounds(true);
         ball2.setBounce(1);
         //ball2.body.checkCollision.none = true;
@@ -247,34 +258,39 @@ export default class Breakout extends Phaser.Scene {
         if(this.score >= 10){
             lucky = 0;
         }
-        if(this.balls.length >=5){
-            lucky = 1;
-        }
         let hard = 2;
         if(this.balls.length > 2 && this.balls.length <= 4){
             hard = 5;
         }else if(this.balls.length > 4){
+            lucky = 3;
             hard = 9;
         }
-        for (let i = 0; i < 6; i++) {
-            if (Phaser.Math.Between(1, 10) <= 6) continue;
-            let brickIdx = Phaser.Math.Between(lucky, hard);
-            let x2 = x + this.ballWidth * (i - 3) + this.ballWidth * 0.5;
-            let y2 = y - this.SCInfo.VH * 0.5 + this.ballWidth * 0.5;
-            let brick;
-            if (brickIdx == 0) {
-                brick = this.physics.add.image(x2, y2, 'imgBalls', 2);
-                brick.setScale(0.8);
-                lucky = 1;  //每行小球只有一个
-            } else {
-                brick = this.physics.add.image(x2, y2, 'ball' + brickIdx);
+        for(let j=0;j<10;j++){
+            let numNew = 0;
+            for (let i = 0; i < 6; i++) {
+                if (Phaser.Math.Between(1, 10) <= 6) continue;
+                ++numNew;
+                let brickIdx = Phaser.Math.Between(lucky, hard);
+                let x2 = x + this.ballWidth * (i - 3) + this.ballWidth * 0.5;
+                let y2 = y - this.SCInfo.VH * 0.5 + this.ballWidth * 0.5;
+                let brick;
+                if (brickIdx == 0) {
+                    brick = this.physics.add.image(x2, y2, 'imgBalls', 2);
+                    brick.setScale(this.ballScale);
+                    lucky = 1;  //每行小球只有一个
+                } else {
+                    brick = this.physics.add.image(x2, y2, 'ball' + brickIdx);
+                }
+                brick.setData('idx', brickIdx);
+                brick.setData('num', brickIdx);
+                brick.setImmovable(true);
+                this.bricks.push(brick);
             }
-            brick.setData('idx', brickIdx);
-            brick.setData('num', brickIdx);
-            brick.setImmovable(true);
-            this.bricks.push(brick);
-        }
 
+            if(numNew > 0){
+                break;
+            }
+        }
     }
 
     MoveDownBricks() {

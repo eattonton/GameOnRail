@@ -15,6 +15,9 @@ class TTGameConfig {
 
         /** @type {number} 数字消消分数*/
         this.SpreadNumberScore = 0;
+
+         /** @type {number} 打砖块分数*/
+         this.BreakoutScore = 0;
     }
 
     CenterX(){
@@ -26,7 +29,7 @@ class TTGameConfig {
     }
 
     SaveRecord(){
-        let data = {SpreadNumberScore:this.SpreadNumberScore};
+        let data = {SpreadNumberScore:this.SpreadNumberScore, BreakoutScore:this.BreakoutScore};
         localStorage.setItem("data",JSON.stringify(data));
     }
 
@@ -35,6 +38,7 @@ class TTGameConfig {
 
         if(data){
             this.SpreadNumberScore = data["SpreadNumberScore"] || 0;
+            this.BreakoutScore = data["BreakoutScore"] || 0;
         }
     }
 
