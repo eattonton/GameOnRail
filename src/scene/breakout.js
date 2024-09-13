@@ -34,11 +34,12 @@ export default class Breakout extends Phaser.Scene {
     isOnGround = true;  //判断球是不是 都在 地上
     isMoveDown = false;  //是否往下移动
     isMerge = false;     //是否合并
+    fireCount = 0;   //发射的次数
     create() {
         this.SCInfo = new SceneInit(this);
-        this.SCInfo.Init(400, 800, 2);
+        this.SCInfo.Init(400, 670, 2);
 
-        this.paddle = this.physics.add.image(this.SCInfo.CX, this.SCInfo.CY + 399, 'imgPaddle').setImmovable();
+        this.paddle = this.physics.add.image(this.SCInfo.CX, this.SCInfo.CY + 333, 'imgPaddle').setImmovable();
         this.paddle.setOrigin(0.5, 0);
         this.paddle.setScale(10, 5);
         this.paddle.setDepth(100);
@@ -50,6 +51,7 @@ export default class Breakout extends Phaser.Scene {
         ball.setBounce(1);
         //ball.setInteractive();
         ball.setData("id", 1);
+        ball.setData("ground", true);
         this.paddle.on('pointerdown', (pointer) => {
             if(!this.isOnGround) return;
             this.x0 = ball.x;
@@ -73,8 +75,8 @@ export default class Breakout extends Phaser.Scene {
         //生成砖块
         this.CreateBricks(this.SCInfo.CX, this.SCInfo.CY);
 
-        this.scoreText = this.add.text(this.SCInfo.CX - 200, this.SCInfo.CY - 500, "Score:0", textStyle);
-        this.bestText = this.add.text(this.SCInfo.CX + 180, this.SCInfo.CY - 500, "Best:0", textStyle).setOrigin(1,0);
+        this.scoreText = this.add.text(this.SCInfo.CX - 200, this.SCInfo.CY - 420, "Score:0", textStyle);
+        this.bestText = this.add.text(this.SCInfo.CX + 180, this.SCInfo.CY - 420, "Best:0", textStyle).setOrigin(1,0);
         TT.RestoreRecord();
         this.bestText.setText(`Best:${TT.BreakoutScore}`);
         //add collision 
@@ -93,6 +95,8 @@ export default class Breakout extends Phaser.Scene {
         let gWall = this.add.graphics({ lineStyle: { width: 5, color: 0xaa00aa }});
         let wall = new Phaser.Geom.Rectangle(this.SCInfo.X,this.SCInfo.Y,this.SCInfo.VW,this.SCInfo.VH);
         gWall.strokeRectShape(wall);
+        //4.其他信息
+        this.CreateTitle();
     }
     
     update() {
@@ -134,13 +138,14 @@ export default class Breakout extends Phaser.Scene {
 
     startGame() {
         if(!this.guideLineHelper) return;
+        ++this.fireCount;  //记录发射次数
         let vec = this.guideLineHelper.GetStartVector();
         if (vec.length() > 0 && vec.y < -10) {
             //发射球
             vec.normalize();
-            vec.setLength(1000);
+            vec.setLength(800);
             this.balls[0].setVelocity(vec.x, vec.y);
-
+            this.balls[0].setData("ground", false);
             let idx = 1;
             let fire = setInterval(() => {
                 if (idx >= this.balls.length) {
@@ -150,14 +155,15 @@ export default class Breakout extends Phaser.Scene {
                 let ball2 = this.balls[idx++];
                 ball2.setVelocity(vec.x, vec.y);
                 ball2.body.checkCollision.none = false;
-            }, 500);
+                ball2.setData("ground", false);
+            }, 50);
         }
         //清除引导线
         this.guideLineHelper.Clear();
         setTimeout(()=>{
             this.isMoveDown = true;
             this.isMerge = true;
-        },100);
+        },40);
     }
 
     brickHit(ball, brick) {
@@ -165,6 +171,9 @@ export default class Breakout extends Phaser.Scene {
          && this.balls.indexOf(brick) >= 0){
             return;
          }
+        if(ball.getData("ground")){
+            return;
+        }
         let brickIdx = brick.getData('idx');
         if(brickIdx >=2){
             brick.setTexture('ball'+(--brickIdx));
@@ -200,6 +209,7 @@ export default class Breakout extends Phaser.Scene {
          }
         //碰到停止
         ball.setVelocity(0);
+        ball.setData('ground', true);
         if (ball.getData("id") == 1) {
             setTimeout(() => {
                 for (let i = 0; i < this.numSmallBall; i++) {
@@ -250,25 +260,31 @@ export default class Breakout extends Phaser.Scene {
         //ball2.body.checkCollision.none = true;
         ball2.setDepth(-1);
         ball2.setData("id", this.balls.length + 1);
+        ball2.setData("ground", true);
         this.balls.push(ball2);
     }
 
     CreateBricks(x, y) {
         let lucky = 1;
+        let numRow = 8;
         if(this.score >= 10){
-            lucky = 0;
+            if(this.fireCount%5 == 0) lucky = 0;
+            numRow = 6;
+        }
+        if(this.score > 400){
+            numRow = 4;
         }
         let hard = 2;
         if(this.balls.length > 2 && this.balls.length <= 4){
-            hard = 5;
+            hard = 9;
         }else if(this.balls.length > 4){
-            lucky = 3;
+            lucky = 4;
             hard = 9;
         }
         for(let j=0;j<10;j++){
             let numNew = 0;
             for (let i = 0; i < 6; i++) {
-                if (Phaser.Math.Between(1, 10) <= 6) continue;
+                if (Phaser.Math.Between(1, 10) <= numRow) continue;
                 ++numNew;
                 let brickIdx = Phaser.Math.Between(lucky, hard);
                 let x2 = x + this.ballWidth * (i - 3) + this.ballWidth * 0.5;
@@ -319,5 +335,10 @@ export default class Breakout extends Phaser.Scene {
             });
         }
         
+    }
+
+    CreateTitle() {
+        let text = this.add.text(this.SCInfo.CX, this.SCInfo.CY - 500, '二头乌游戏\n 打数字块', { fontFamily: '微软雅黑', fontSize: '45px', fill: '#000' });
+        text.setOrigin(0.5);
     }
 }
