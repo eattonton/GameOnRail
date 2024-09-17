@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 
 export default class GuideLineHelper{
-    constructor(g){
+    constructor(g,n){
         this.g = g;
         this.lines = [];
+        this.num = n || 2;
     }
 
     Clear(){
@@ -48,7 +49,7 @@ export default class GuideLineHelper{
         //绘制
         this.lines = [];
         this.lines.push(l1);
-        if (l2) {
+        if (l2 && this.num >= 2) {
             this.lines.push(l2);
         }
         // if (l3) {

@@ -8,6 +8,8 @@ import HaShi from "./scene/hashi";
 import SpreadNumbers from "./scene/spreadnumber";
 import FloodFill from "./scene/floodfill";
 import Breakout from "./scene/breakout";
+import Marbles from "./scene/marbles";
+import BackGroundA from "./scene/backgrounda";
 
 const config = {
     type: Phaser.AUTO,
@@ -29,7 +31,7 @@ const config = {
     input: {
         gamepad: true
     },
-    scene: [Preload,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers,FloodFill,Breakout]
+    scene: [Preload,BackGroundA,Menu,Nonograms,ShiKaKu,HaShi,SpreadNumbers,FloodFill,Breakout,Marbles]
 
 }
 

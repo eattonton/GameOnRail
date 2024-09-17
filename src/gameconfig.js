@@ -16,8 +16,10 @@ class TTGameConfig {
         /** @type {number} 数字消消分数*/
         this.SpreadNumberScore = 0;
 
-         /** @type {number} 打砖块分数*/
-         this.BreakoutScore = 0;
+        /** @type {number} 打砖块分数*/
+        this.BreakoutScore = 0;
+        /** @type {number} 弹珠分数*/
+        this.MarbleScore = 0;
     }
 
     CenterX(){
@@ -39,6 +41,7 @@ class TTGameConfig {
         if(data){
             this.SpreadNumberScore = data["SpreadNumberScore"] || 0;
             this.BreakoutScore = data["BreakoutScore"] || 0;
+            this.MarbleScore = data["MarbleScore"] || 0;
         }
     }
 

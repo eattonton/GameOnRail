@@ -9,6 +9,7 @@ const textStyle = {
     fill: '#ff0000'
 }
 
+//打数字砖块
 export default class Breakout extends Phaser.Scene {
     constructor() {
         super({

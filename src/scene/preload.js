@@ -10,6 +10,7 @@ import pngBalls from "../assets/breakout/balls.png"
 import pngBrick from "../assets/breakout/brick.png"
 import pngDestroyed from "../assets/breakout/destroyed.png"
 import pngPaddle from "../assets/breakout/paddle.png"
+import pngNumBalls from "../assets/numballs.png"
 
 export default class Preload extends Phaser.Scene {
     constructor() {
@@ -32,6 +33,8 @@ export default class Preload extends Phaser.Scene {
         this.load.image('imgBrick', pngBrick);
         this.load.image('imgDestroyed', pngDestroyed);
         this.load.image('imgPaddle', pngPaddle);
+        //balls
+        this.load.spritesheet('imgNumBalls', pngNumBalls, { frameWidth: 40, frameHeight: 40 });
         // 监听加载过程
         this.load.on('progress', (value) => {
             this.UpdateProgressBar(value)
@@ -63,7 +66,9 @@ export default class Preload extends Phaser.Scene {
     LoadComplete() {
         // 进度条加载完毕后的操作
         this.m_ProgressBar.destroy();
+        this.scene.start('BackGroundA');
         this.scene.start('Menu');
+        
     }
 
 }
